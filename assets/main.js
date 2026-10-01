@@ -2,10 +2,11 @@ const menu=document.querySelector('.menu'),nav=document.querySelector('nav');men
 
 const bgm=document.getElementById('annexBgm'), player=document.getElementById('musicPlayer'), toggle=document.getElementById('musicToggle'), mute=document.getElementById('muteBtn'), volume=document.getElementById('volumeSlider'), state=document.getElementById('musicState'), bar=document.getElementById('musicBar'), progress=document.getElementById('musicProgress'), gate=document.getElementById('musicGate'), enterMusic=document.getElementById('enterWithMusic'), enterSilent=document.getElementById('enterSilent');
 const savedVolume=localStorage.getItem('annexBgmVolume'); const savedMuted=localStorage.getItem('annexBgmMuted'); bgm.volume=savedVolume!==null?Number(savedVolume):.24; volume.value=bgm.volume; bgm.muted=savedMuted==='1';
+document.body.classList.add('entry-locked'); player.style.opacity='0'; player.style.pointerEvents='none';
 function paint(){const playing=!bgm.paused;player.classList.toggle('playing',playing);state.textContent=playing?'PLAYING':'PAUSED';mute.textContent=bgm.muted||bgm.volume===0?'♩':'♬'}
-async function playBgm(showGate=true){try{await bgm.play();gate.hidden=true;paint();}catch(e){if(showGate)gate.hidden=false;paint();}}
-toggle.addEventListener('click',()=>bgm.paused?playBgm(false):bgm.pause());bgm.addEventListener('play',paint);bgm.addEventListener('pause',paint);
+async function playBgm(){try{await bgm.play();paint();return true}catch(e){paint();return false}}
+function enterSite(withMusic){if(gate.classList.contains('leaving'))return;if(withMusic){bgm.muted=false;localStorage.setItem('annexBgmMuted','0');playBgm()}else{bgm.pause();paint()}gate.classList.add('leaving');setTimeout(()=>{gate.hidden=true;document.body.classList.remove('entry-locked');player.style.opacity='';player.style.pointerEvents='';},2450)}
+toggle.addEventListener('click',()=>bgm.paused?playBgm():bgm.pause());bgm.addEventListener('play',paint);bgm.addEventListener('pause',paint);
 mute.addEventListener('click',()=>{bgm.muted=!bgm.muted;localStorage.setItem('annexBgmMuted',bgm.muted?'1':'0');paint()});volume.addEventListener('input',()=>{bgm.volume=Number(volume.value);if(bgm.volume>0)bgm.muted=false;localStorage.setItem('annexBgmVolume',String(bgm.volume));localStorage.setItem('annexBgmMuted',bgm.muted?'1':'0');paint()});
 bgm.addEventListener('timeupdate',()=>{if(Number.isFinite(bgm.duration)&&bgm.duration>0)bar.style.width=(bgm.currentTime/bgm.duration*100)+'%'});progress.addEventListener('click',e=>{if(!Number.isFinite(bgm.duration))return;const r=progress.getBoundingClientRect();bgm.currentTime=((e.clientX-r.left)/r.width)*bgm.duration});
-enterMusic.addEventListener('click',()=>playBgm(false));enterSilent.addEventListener('click',()=>{gate.hidden=true;bgm.pause();paint()});
-window.addEventListener('load',()=>setTimeout(()=>playBgm(true),350));document.addEventListener('visibilitychange',paint);paint();
+enterMusic.addEventListener('click',()=>enterSite(true));enterSilent.addEventListener('click',()=>enterSite(false));document.addEventListener('visibilitychange',paint);paint();
